@@ -115,7 +115,7 @@ class CF7CMT_Geo
 		$response = null;
 
 		if ('ip-api' === $provider) {
-			$url      = sprintf('http://ip-api.com/json/%1$s?fields=status,country,city', rawurlencode($ip));
+			$url      = sprintf('http://ip-api.com/json/%1$s?fields=status,country,city,lat,lon', rawurlencode($ip));
 			$response = wp_remote_get(
 				esc_url_raw($url),
 				array(
@@ -164,4 +164,5 @@ class CF7CMT_Geo
 		);
 	}
 }
+
 

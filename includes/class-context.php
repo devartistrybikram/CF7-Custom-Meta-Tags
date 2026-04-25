@@ -226,3 +226,5 @@ class CF7CMT_Context
 		return (string) $cookie;
 	}
 }
+
+

@@ -132,3 +132,4 @@ class CF7CMT_Tracking
 		$_COOKIE[ $cookie_name ] = $value;
 	}
 }
+

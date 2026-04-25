@@ -490,3 +490,4 @@ class CF7CMT_Admin
 		echo '</div>';
 	}
 }
+

@@ -238,3 +238,4 @@ class CF7CMT_CF7_Integration
 		return $value;
 	}
 }
+
