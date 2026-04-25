@@ -116,5 +116,8 @@ class CF7CMT_Plugin
 		if (CF7CMT_Utils::is_cf7_active()) {
 			$this->cf7->register_hooks();
 		}
+		else {
+			error_log('CF7 Custom Meta Tags: Contact Form 7 not active.');
+		}
 	}
 }

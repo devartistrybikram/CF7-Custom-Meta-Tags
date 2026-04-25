@@ -44,8 +44,26 @@ class CF7CMT_Admin
 		if (CF7CMT_Utils::is_cf7_active()) {
 			add_action('wpcf7_admin_init', array($this, 'register_tag_generator'));
 		}
-	}
 
+		add_action('after_plugin_row_' . plugin_basename(CF7CMT_FILE), array($this, 'plugin_row_notice'), 10, 2);
+	}
+	
+	public function plugin_row_notice($plugin_file, $plugin_data)
+	{
+		if (CF7CMT_Utils::is_cf7_active()) {
+			return;
+		}
+
+		$colspan = 4;
+
+		echo '<tr class="plugin-update-tr active">';
+		echo '<td colspan="' . esc_attr($colspan) . '" class="plugin-update colspanchange">';
+		echo '<div class="update-message notice inline notice-error notice-alt">';
+		echo '<p><strong>CF7 Custom Meta Tags:</strong> This plugin requires Contact Form 7 to function.</p>';
+		echo '</div>';
+		echo '</td>';
+		echo '</tr>';
+	}
 	/**
 	 * Add settings link.
 	 *
@@ -77,10 +95,28 @@ class CF7CMT_Admin
 			return;
 		}
 
-		printf(
-			'<div class="notice notice-warning"><p>%1$s</p></div>',
-			esc_html__('CF7 Custom Meta Tags requires Contact Form 7 to be installed and activated.', 'cf7-custom-meta-tags')
+		$install_url = wp_nonce_url(
+			self_admin_url('update.php?action=install-plugin&plugin=contact-form-7'),
+			'install-plugin_contact-form-7'
 		);
+
+		$activate_url = wp_nonce_url(
+			self_admin_url('plugins.php?action=activate&plugin=contact-form-7/wp-contact-form-7.php'),
+			'activate-plugin_contact-form-7/wp-contact-form-7.php'
+		);
+
+		$is_installed = file_exists(WP_PLUGIN_DIR . '/contact-form-7/wp-contact-form-7.php');
+
+		echo '<div class="notice notice-error">';
+		echo '<p><strong>CF7 Custom Meta Tags:</strong> Contact Form 7 is required.</p>';
+
+		if ($is_installed) {
+			echo '<p><a href="' . esc_url($activate_url) . '" class="button button-primary">Activate Contact Form 7</a></p>';
+		} else {
+			echo '<p><a href="' . esc_url($install_url) . '" class="button button-primary">Install Contact Form 7</a></p>';
+		}
+
+		echo '</div>';
 	}
 
 	/**

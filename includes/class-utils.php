@@ -99,6 +99,36 @@ class CF7CMT_Utils
 				'description' => __('The persisted utm_content query parameter.', 'cf7-custom-meta-tags'),
 				'group'       => 'utm',
 			),
+			'page_slug' => array(
+				'label'       => __('Page Slug', 'cf7-custom-meta-tags'),
+				'description' => __('The current page slug.', 'cf7-custom-meta-tags'),
+				'group'       => 'page',
+			),
+			'user_device' => array(
+				'label'       => __('User Device', 'cf7-custom-meta-tags'),
+				'description' => __('Detected device type (Mobile/Desktop/Tablet).', 'cf7-custom-meta-tags'),
+				'group'       => 'user',
+			),
+			'user_latitude' => array(
+				'label'       => __('User Latitude', 'cf7-custom-meta-tags'),
+				'description' => __('Browser geolocation latitude.', 'cf7-custom-meta-tags'),
+				'group'       => 'geo',
+			),
+			'user_longitude' => array(
+				'label'       => __('User Longitude', 'cf7-custom-meta-tags'),
+				'description' => __('Browser geolocation longitude.', 'cf7-custom-meta-tags'),
+				'group'       => 'geo',
+			),
+			'geo_latitude' => array(
+				'label'       => __('Geo Latitude', 'cf7-custom-meta-tags'),
+				'description' => __('Latitude detected from IP lookup.', 'cf7-custom-meta-tags'),
+				'group'       => 'geo',
+			),
+			'geo_longitude' => array(
+				'label'       => __('Geo Longitude', 'cf7-custom-meta-tags'),
+				'description' => __('Longitude detected from IP lookup.', 'cf7-custom-meta-tags'),
+				'group'       => 'geo',
+			),
 		);
 	}
 
@@ -207,29 +237,51 @@ class CF7CMT_Utils
 	 */
 	public static function get_client_ip()
 	{
-		$candidates = array(
-			'HTTP_CF_CONNECTING_IP',
-			'HTTP_X_REAL_IP',
-			'HTTP_X_FORWARDED_FOR',
-			'HTTP_CLIENT_IP',
-			'REMOTE_ADDR',
-		);
+		$ip = '';
 
-		foreach ($candidates as $server_key) {
-			if (empty($_SERVER[ $server_key ])) {
-				continue;
-			}
+		// 1. Cloudflare (most reliable if using CF)
+		if (!empty($_SERVER['HTTP_CF_CONNECTING_IP'])) {
+			$ip = $_SERVER['HTTP_CF_CONNECTING_IP'];
+		}
 
-			$raw_value = sanitize_text_field(wp_unslash($_SERVER[ $server_key ]));
-			$parts     = array_map('trim', explode(',', $raw_value));
+		// 2. X-Forwarded-For (can contain multiple IPs)
+		elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+			$ips = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']);
 
-			foreach ($parts as $part) {
-				if (filter_var($part, FILTER_VALIDATE_IP)) {
-					return $part;
+			foreach ($ips as $candidate) {
+				$candidate = trim($candidate);
+
+				if (filter_var($candidate, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+					$ip = $candidate;
+					break;
 				}
 			}
 		}
 
-		return '';
+		// 3. X-Real-IP (some servers use this)
+		elseif (!empty($_SERVER['HTTP_X_REAL_IP'])) {
+			$ip = $_SERVER['HTTP_X_REAL_IP'];
+		}
+
+		// 4. Fallback
+		elseif (!empty($_SERVER['REMOTE_ADDR'])) {
+			$ip = $_SERVER['REMOTE_ADDR'];
+		}
+
+		// Final validation
+		if (!filter_var($ip, FILTER_VALIDATE_IP)) {
+			return '';
+		}
+
+		// Normalize localhost
+		if ($ip === '::1') {
+			return '127.0.0.1';
+		}
+
+		if (!filter_var($ip, FILTER_VALIDATE_IP)) {
+			return '';
+		}
+
+		return sanitize_text_field($ip);
 	}
 }

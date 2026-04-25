@@ -37,12 +37,23 @@ class CF7CMT_Geo
 	public function get_location($ip)
 	{
 		$empty = array(
-			'city'    => '',
-			'country' => '',
+			'city'      => '',
+			'country'   => '',
+			'latitude'  => '',
+			'longitude' => '',
 		);
 
 		if (empty($ip) || ! $this->settings->get('enable_geo_lookup')) {
 			return $empty;
+		}
+		
+		if ($ip === '127.0.0.1' || $ip === '::1') {
+			return array(
+				'city'    => 'Localhost',
+				'country' => 'Development',
+				'latitude'  => '0.0000',
+				'longitude' => '0.0000',
+			);
 		}
 
 		if (! filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
@@ -146,8 +157,10 @@ class CF7CMT_Geo
 		}
 
 		return array(
-			'city'    => isset($data['city']) ? sanitize_text_field((string) $data['city']) : '',
-			'country' => isset($data['country']) ? sanitize_text_field((string) $data['country']) : '',
+    		'city'      => isset($data['city']) ? sanitize_text_field((string) $data['city']) : '',
+			'country'   => isset($data['country']) ? sanitize_text_field((string) $data['country']) : '',
+			'latitude'  => isset($data['lat']) ? sanitize_text_field((string) $data['lat']) : (isset($data['latitude']) ? sanitize_text_field((string) $data['latitude']) : ''),
+			'longitude' => isset($data['lon']) ? sanitize_text_field((string) $data['lon']) : (isset($data['longitude']) ? sanitize_text_field((string) $data['longitude']) : ''),
 		);
 	}
 }

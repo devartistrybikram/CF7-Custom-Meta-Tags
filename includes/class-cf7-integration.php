@@ -90,7 +90,17 @@ class CF7CMT_CF7_Integration
 			return '';
 		}
 
-		$form = (is_object($tag) && method_exists($tag, 'get_contact_form')) ? $tag->get_contact_form() : null;
+		$form = null;
+		// Try from tag (newer CF7)
+		if (is_object($tag) && method_exists($tag, 'get_contact_form')) {
+			$form = $tag->get_contact_form();
+		}
+
+		// Fallback (global current form)
+		if (!$form && function_exists('wpcf7_get_current_contact_form')) {
+			$form = wpcf7_get_current_contact_form();
+		}
+
 		$data = $this->context->build($form);
 		$atts = array(
 			'type'  => 'hidden',

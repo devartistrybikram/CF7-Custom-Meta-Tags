@@ -60,7 +60,7 @@ class CF7CMT_Context
 			$form = wpcf7_contact_form(absint($posted_data['_wpcf7']));
 		}
 
-		$form_id       = $form ? (string) absint($form->id()) : '';
+		$form_id = $form ? (string) absint($form->id()) : (!empty($posted_data['_wpcf7']) ? (string) absint($posted_data['_wpcf7']) : '');
 		$form_title    = $form ? sanitize_text_field($form->title()) : '';
 		$current_url   = CF7CMT_Utils::get_current_url();
 		$referrer_url  = '';
@@ -100,6 +100,8 @@ class CF7CMT_Context
 		$geo_location = array(
 			'city'    => '',
 			'country' => '',
+			'latitude'=> '',
+			'longitude'=> '',
 		);
 
 		if (! empty($posted_data['user_agent'])) {
@@ -111,9 +113,38 @@ class CF7CMT_Context
 		if (
 			$this->settings->is_tag_enabled('geo_city')
 			|| $this->settings->is_tag_enabled('geo_country')
+			|| $this->settings->is_tag_enabled('geo_latitude')
+			|| $this->settings->is_tag_enabled('geo_longitude')
 		) {
 			$geo_location = $this->geo->get_location($user_ip);
 		}
+		
+		$page_slug = '';
+		if ($page_id) {
+			$post = get_post($page_id);
+			if ($post && isset($post->post_name)) {
+				$page_slug = $post->post_name;
+			}
+		}
+
+		$user_device = '';
+		if (!empty($user_agent)) {
+			$ua = strtolower($user_agent);
+
+			$user_device = 'Desktop'; // default
+
+			// Tablet first (important)
+			if (preg_match('/tablet|ipad|playbook|silk/i', $ua)) {
+				$user_device = 'Tablet';
+			}
+			// Mobile (but exclude tablets)
+			elseif (preg_match('/mobile|android|iphone|ipod|blackberry|iemobile|opera mini/i', $ua)) {
+				$user_device = 'Mobile';
+			}
+		}
+		
+		$user_latitude  = !empty($posted_data['user_latitude']) ? $posted_data['user_latitude'] : CF7CMT_Utils::get_cookie('user_latitude');
+		$user_longitude = !empty($posted_data['user_longitude']) ? $posted_data['user_longitude'] : CF7CMT_Utils::get_cookie('user_longitude');
 
 		$metadata = array(
 			'page_title'    => $this->get_tag_value($posted_data, 'page_title', $page_id ? get_the_title($page_id) : $cookie_source['page_title']),
@@ -132,6 +163,12 @@ class CF7CMT_Context
 			'utm_campaign'  => $this->get_utm_value($posted_data, 'utm_campaign', $cookie_source['utm_campaign']),
 			'utm_term'      => $this->get_utm_value($posted_data, 'utm_term', $cookie_source['utm_term']),
 			'utm_content'   => $this->get_utm_value($posted_data, 'utm_content', $cookie_source['utm_content']),
+			'page_slug'     => $page_slug,
+			'user_device'   => $user_device,
+			'user_latitude' => $user_latitude,
+			'user_longitude'=> $user_longitude,
+			'geo_latitude'  => $this->get_tag_value($posted_data, 'geo_latitude', $geo_location['latitude']),
+			'geo_longitude' => $this->get_tag_value($posted_data, 'geo_longitude', $geo_location['longitude']),
 		);
 
 		foreach ($metadata as $tag => $value) {
